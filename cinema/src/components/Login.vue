@@ -1,0 +1,151 @@
+<template>
+<div>
+  <HomeInterno></HomeInterno>
+  
+	<b-container>
+		<b-row align-h="center" class="mt-5">
+			<b-col class="5">
+				<b-card classe ="p-3">
+					<h3 class ="mb-4">Login</h3>
+						<!--  Inicio do formulário-->  
+						<b-form >
+            <b-alert
+                :show="dismissCountDown"
+                dismissible
+                :variant="tipo"
+                @dismissed="dismissCountDown=0"
+                @dismiss-count-down="countDownChanged"
+            >{{informacao}}</b-alert>
+  							<b-form  @submit="login" @reset="onReset" >
+
+  								<b-form-group id="input-group-1" label="Login" label-for="input-1">
+    								    <b-form-input
+    								      id="input-1"              								      
+    								      v-model="form.login"
+    								      required
+    								      placeholder="login"
+    								    ></b-form-input>
+      							</b-form-group>		
+							      
+							    <b-form-group id="input-group-2" label="Senha" label-for="input-2" >
+    								    <b-form-input 
+
+    								      type="password" 
+    								      id="input-2"  
+    								      v-model="form.senha"
+    								      required
+    								      placeholder="Senha"
+    								    ></b-form-input>
+      							</b-form-group>                    
+                  <b-form-group id="input-group-3" label="Tipo" label-for="input-3">
+                    
+                     <b-form-select
+                      id="input-3"
+                      v-model="form.tipoUsuario"
+                      :options="tipoUsuarios"
+                      required
+                      ></b-form-select>
+                  </b-form-group>
+
+							   <b-button type="submit" variant="primary" > Logar </b-button>
+                 &nbsp
+                 <b-button type="reset" variant="danger"> Limpar </b-button>							      
+    							</b-form> 
+                  <br>   
+  						
+              </b-form>  						
+
+  						<!--  FIM do formulário-->
+				</b-card>
+			</b-col>
+		</b-row>
+	</b-container>
+</div>
+</template>
+
+<script>
+
+import HomeInterno from './HomeInterno.vue'
+import LoginService from '../servicos/login.js'
+
+export default {
+    components: {    
+     HomeInterno
+  },
+    data() {
+      return {
+        usuario:{
+            nome:'',
+            sobrenome:'',
+            senha:'',
+            matricula:'',
+            curso:'',
+            tipo_usuario:'' 
+        },
+
+
+        form: {          
+          login: '',
+          senha: '',  
+          tipoUsuario: null,        
+        },                
+        showDismissibleAlert : false,         
+        informacao:'', 
+        tipo: '', 
+        dismissSecs: 3,
+        dismissCountDown: 0 ,
+        tipoUsuarios: [{text:'Opção',value: null},'Administrador','Aluno']
+      }
+    },
+    methods: {
+      login(evt){
+          evt.preventDefault()                    
+          if(this.form.login != "" && this.form.senha!="" && (this.form.tipoUsuario != null || this.form.tipoUsuario != "Opção")){
+
+              LoginService.getUsuario(this.form.login).then(Response=>{                
+
+                this.usuario = Response.data
+                console.log(this.usuario)
+
+                if(this.usuario.senha == this.form.senha){
+                  this.informacao = "Login realizado com sucesso!";
+                  this.tipo="success";
+                  this.limparDados();
+                  this.showAlert();                  
+                  if(this.form.tipoUsuario == "Administrador"){                  
+                    this.$router.push({name:'PainelAdm' , params:{usuario : Response.data}})
+                  }else{
+                    this.informacao = "Atenção departamento ainda não implementado";   
+                    this.tipo="warning";               
+                    this.showAlert();  
+                  }
+                }else{
+                  this.informacao = "Senha ou login icorreto, tente novamente!";   
+                  this.tipo="warning";               
+                  this.showAlert();
+                }
+
+              }).catch(e=>{
+                this.informacao = "Erro ao consultar o banco!"
+                this.tipo="danger";               
+                this.showAlert();              
+              })
+          }          
+      },      
+        onReset(evt){
+          evt.preventDefault()
+          this.limparDados();
+        },
+        limparDados(){
+          this.form.login=''
+          this.form.senha=''        
+        },
+        countDownChanged(dismissCountDown) {
+        this.dismissCountDown = dismissCountDown
+      },
+        showAlert() {          
+        this.dismissCountDown = this.dismissSecs
+      }
+    }
+  }
+</script>
